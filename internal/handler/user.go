@@ -17,7 +17,6 @@ func NewUserHandler(uc usecase.UserUsecase) *UserHandler {
 	return &UserHandler{uc: uc}
 }
 
-// HandleUsers управляет всеми CRUD эндпоинтами для /users
 func (h *UserHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
