@@ -1,0 +1,44 @@
+@baseUrl = http://localhost:8080
+@apiKey = KBTU_SECRET_2026
+
+### 1. Healthcheck
+GET {{baseUrl}}/health
+X-API-KEY: {{apiKey}}
+
+### 2. POST
+POST {{baseUrl}}/users
+X-API-KEY: {{apiKey}}
+Content-Type: application/json
+
+{
+  "name": "Arlan",
+  "email": "ar_maximov@kbtu.kz",
+  "age": 20
+}
+
+### 3. GET
+GET {{baseUrl}}/users
+X-API-KEY: {{apiKey}}
+
+### 4. GET{ID}
+GET {{baseUrl}}/users/2
+X-API-KEY: {{apiKey}}
+
+### 5. PUT
+PUT {{baseUrl}}/users
+X-API-KEY: {{apiKey}}
+Content-Type: application/json
+
+{
+  "id": 2,
+  "name": "Arlan Updated",
+  "email": "ar.new@kbtu.kz",
+  "age": 21
+}
+
+### 6. DELETE
+DELETE {{baseUrl}}/users/2
+X-API-KEY: {{apiKey}}
+
+### 7. Error test: Access without key (401)
+GET {{baseUrl}}/users
