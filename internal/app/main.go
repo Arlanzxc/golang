@@ -10,8 +10,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
 
 func Run() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -50,12 +58,12 @@ func middleware(next http.Handler) http.Handler {
 
 func initPostgreConfig() *modules.PostgreConfig {
 	return &modules.PostgreConfig{
-		Host:        "localhost",
-		Port:        "5252",
-		Username:    "postgres",
-		Password:    "postgres159357",
-		DBName:      "mydb",
-		SSLMode:     "disable",
+		Host:        getEnv("DB_HOST", "localhost"),
+		Port:        getEnv("DB_PORT", "5252"),
+		Username:    getEnv("DB_USER", "postgres"),
+		Password:    getEnv("DB_PASSWORD", "postgres159357"),
+		DBName:      getEnv("DB_NAME", "mydb"),
+		SSLMode:     getEnv("DB_SSLMODE", "disable"),
 		ExecTimeout: 5 * time.Second,
 	}
 }
