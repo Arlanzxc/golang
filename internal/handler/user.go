@@ -34,8 +34,27 @@ func (h *UserHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
 			}
 			json.NewEncoder(w).Encode(user)
 		} else {
-			users, _ := h.uc.GetAll()
-			json.NewEncoder(w).Encode(users)
+			page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+			if page < 1 { page = 1 }
+			
+			limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+			if limit < 1 { limit = 10 }
+			
+			sortBy := r.URL.Query().Get("order_by")
+			filters := map[string]string{
+				"id":     r.URL.Query().Get("id"),
+				"name":   r.URL.Query().Get("name"),
+				"email":  r.URL.Query().Get("email"),
+				"gender": r.URL.Query().Get("gender"),
+				"birth_date": r.URL.Query().Get("birth_date"),
+			}
+			
+			res, err := h.uc.GetPaginatedUsers(filters, sortBy, page, limit)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			json.NewEncoder(w).Encode(res)
 		}
 
 	case http.MethodPost:
@@ -77,4 +96,22 @@ func (h *UserHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status": "UP"}`))
+}
+
+func (h *UserHandler) HandleCommonFriends(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	u1, _ := strconv.Atoi(r.URL.Query().Get("user1"))
+	u2, _ := strconv.Atoi(r.URL.Query().Get("user2"))
+
+	friends, err := h.uc.GetCommonFriends(u1, u2)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(friends)
 }

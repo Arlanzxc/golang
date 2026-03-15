@@ -38,6 +38,7 @@ func Run() {
 	mux.HandleFunc("/health", h.HealthCheck)
 	mux.HandleFunc("/users", h.HandleUsers)
 	mux.HandleFunc("/users/", h.HandleUsers)
+	mux.HandleFunc("/users/common-friends", h.HandleCommonFriends)
 
 	log.Println("Server starting on :8080")
 	if err := http.ListenAndServe(":8080", middleware(mux)); err != nil {

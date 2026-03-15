@@ -68,3 +68,87 @@ func (r *Repository) DeleteUser(id int) (int64, error) {
 	rows, _ := res.RowsAffected()
 	return rows, nil
 }
+
+func (r *Repository) GetPaginatedUsers(filters map[string]string, sortBy string, page, pageSize int) (modules.PaginatedResponse, error) {
+	offset := (page - 1) * pageSize
+	var users []modules.User
+	var totalCount int
+
+	baseQuery := " FROM users WHERE 1=1"
+	args := []interface{}{}
+	argID := 1
+
+	if val, ok := filters["id"]; ok && val != "" {
+		baseQuery += fmt.Sprintf(" AND id = $%d", argID)
+		args = append(args, val)
+		argID++
+	}
+	if val, ok := filters["name"]; ok && val != "" {
+		baseQuery += fmt.Sprintf(" AND name ILIKE $%d", argID)
+		args = append(args, "%"+val+"%")
+		argID++
+	}
+	if val, ok := filters["email"]; ok && val != "" {
+		baseQuery += fmt.Sprintf(" AND email ILIKE $%d", argID)
+		args = append(args, "%"+val+"%")
+		argID++
+	}
+	if val, ok := filters["gender"]; ok && val != "" {
+		baseQuery += fmt.Sprintf(" AND gender = $%d", argID)
+		args = append(args, val)
+		argID++
+	}
+	if val, ok := filters["birth_date"]; ok && val != "" {
+		baseQuery += fmt.Sprintf(" AND birth_date = $%d", argID)
+		args = append(args, val)
+		argID++
+	}
+
+	countQuery := "SELECT COUNT(*) " + baseQuery
+	r.db.DB.Get(&totalCount, countQuery, args...)
+
+	orderQuery := " ORDER BY id ASC"
+	if sortBy != "" {
+		orderQuery = fmt.Sprintf(" ORDER BY %s ASC", sortBy)
+		if sortBy[0] == '-' {
+			orderQuery = fmt.Sprintf(" ORDER BY %s DESC", sortBy[1:])
+		}
+	}
+
+	selectQuery := "SELECT * " + baseQuery + orderQuery + fmt.Sprintf(" LIMIT $%d OFFSET $%d", argID, argID+1)
+	args = append(args, pageSize, offset)
+
+	err := r.db.DB.Select(&users, selectQuery, args...)
+	if err != nil {
+		return modules.PaginatedResponse{}, err
+	}
+
+	if users == nil {
+		users = []modules.User{}
+	}
+
+	return modules.PaginatedResponse{
+		Data:       users,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
+}
+
+func (r *Repository) GetCommonFriends(userID1, userID2 int) ([]modules.User, error) {
+	var friends []modules.User
+	query := `
+		SELECT u.* FROM users u
+		JOIN user_friends uf1 ON u.id = uf1.friend_id
+		JOIN user_friends uf2 ON u.id = uf2.friend_id
+		WHERE uf1.user_id = $1 AND uf2.user_id = $2
+	`
+	err := r.db.DB.Select(&friends, query, userID1, userID2)
+	if err != nil {
+		return nil, err
+	}
+	if friends == nil {
+		friends = []modules.User{}
+	}
+	return friends, nil
+}

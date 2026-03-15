@@ -1,2 +1,3 @@
+DROP TABLE IF EXISTS user_friends CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS schema_migrations;

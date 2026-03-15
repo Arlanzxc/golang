@@ -11,6 +11,8 @@ type UserUsecase interface {
 	Create(u modules.User) (int, error)
 	Update(u modules.User) error
 	Delete(id int) (int64, error)
+	GetPaginatedUsers(filters map[string]string, sortBy string, page, pageSize int) (modules.PaginatedResponse, error)
+	GetCommonFriends(userID1, userID2 int) ([]modules.User, error)
 }
 
 type userUsecase struct {
@@ -39,4 +41,12 @@ func (u *userUsecase) Update(user modules.User) error {
 
 func (u *userUsecase) Delete(id int) (int64, error) {
 	return u.repo.DeleteUser(id)
+}
+
+func (u *userUsecase) GetPaginatedUsers(filters map[string]string, sortBy string, page, pageSize int) (modules.PaginatedResponse, error) {
+	return u.repo.GetPaginatedUsers(filters, sortBy, page, pageSize)
+}
+
+func (u *userUsecase) GetCommonFriends(userID1, userID2 int) ([]modules.User, error) {
+	return u.repo.GetCommonFriends(userID1, userID2)
 }

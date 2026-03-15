@@ -12,6 +12,8 @@ type UserRepository interface {
 	CreateUser(u modules.User) (int, error)
 	UpdateUser(u modules.User) error
 	DeleteUser(id int) (int64, error)
+	GetPaginatedUsers(filters map[string]string, sortBy string, page, pageSize int) (modules.PaginatedResponse, error)
+	GetCommonFriends(userID1, userID2 int) ([]modules.User, error)
 }
 type Repositories struct {
 	UserRepository
