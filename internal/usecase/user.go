@@ -1,52 +1,66 @@
 package usecase
 
 import (
-	"GOLANG/internal/repository"
-	"GOLANG/pkg/modules"
+	"fmt"
+
+	"GOLANG/internal/entity"
+	"GOLANG/utils"
+
+	"github.com/google/uuid"
 )
 
-type UserUsecase interface {
-	GetAll() ([]modules.User, error)
-	GetByID(id int) (*modules.User, error)
-	Create(u modules.User) (int, error)
-	Update(u modules.User) error
-	Delete(id int) (int64, error)
-	GetPaginatedUsers(filters map[string]string, sortBy string, page, pageSize int) (modules.PaginatedResponse, error)
-	GetCommonFriends(userID1, userID2 int) ([]modules.User, error)
+type UserUseCase struct {
+	repo UserRepoInterface
 }
 
-type userUsecase struct {
-	repo repository.UserRepository
+func NewUserUseCase(r UserRepoInterface) *UserUseCase {
+	return &UserUseCase{
+		repo: r,
+	}
 }
 
-func NewUserUsecase(repo repository.UserRepository) UserUsecase {
-	return &userUsecase{repo: repo}
+func (u *UserUseCase) RegisterUser(user *entity.User) (*entity.User, string, error) {
+	hashedPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		return nil, "", fmt.Errorf("hash password: %w", err)
+	}
+	user.Password = hashedPassword
+
+	if user.Role == "" {
+		user.Role = "user" 
+	}
+
+	createdUser, err := u.repo.RegisterUser(user)
+	if err != nil {
+		return nil, "", fmt.Errorf("register user: %w", err)
+	}
+
+	sessionID := uuid.New().String()
+	return createdUser, sessionID, nil
 }
 
-func (u *userUsecase) GetAll() ([]modules.User, error) {
-	return u.repo.GetUsers()
+func (u *UserUseCase) LoginUser(input *entity.LoginUserDTO) (string, error) {
+	userFromRepo, err := u.repo.LoginUser(input.Username)
+	if err != nil {
+		return "", fmt.Errorf("invalid credentials")
+	}
+
+	if !utils.CheckPassword(userFromRepo.Password, input.Password) {
+		return "", fmt.Errorf("invalid credentials")
+	}
+
+	token, err := utils.GenerateJWT(userFromRepo.ID, userFromRepo.Role)
+	if err != nil {
+		return "", fmt.Errorf("generate jwt: %w", err)
+	}
+
+	return token, nil
 }
 
-func (u *userUsecase) GetByID(id int) (*modules.User, error) {
+func (u *UserUseCase) GetUserByID(id string) (*entity.User, error) {
 	return u.repo.GetUserByID(id)
 }
 
-func (u *userUsecase) Create(user modules.User) (int, error) {
-	return u.repo.CreateUser(user)
-}
-
-func (u *userUsecase) Update(user modules.User) error {
-	return u.repo.UpdateUser(user)
-}
-
-func (u *userUsecase) Delete(id int) (int64, error) {
-	return u.repo.DeleteUser(id)
-}
-
-func (u *userUsecase) GetPaginatedUsers(filters map[string]string, sortBy string, page, pageSize int) (modules.PaginatedResponse, error) {
-	return u.repo.GetPaginatedUsers(filters, sortBy, page, pageSize)
-}
-
-func (u *userUsecase) GetCommonFriends(userID1, userID2 int) ([]modules.User, error) {
-	return u.repo.GetCommonFriends(userID1, userID2)
+func (u *UserUseCase) PromoteUser(id string) error {
+	return u.repo.PromoteUser(id)
 }
