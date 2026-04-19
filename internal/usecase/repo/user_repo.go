@@ -42,3 +42,19 @@ func (u *UserRepo) GetUserByID(id string) (*entity.User, error) {
 func (u *UserRepo) PromoteUser(id string) error {
 	return u.PG.Conn.Model(&entity.User{}).Where("id = ?", id).Update("role", "admin").Error
 }
+
+func (u *UserRepo) GetByEmail(email string) (*entity.User, error) {
+	var user entity.User
+	if err := u.PG.Conn.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	return &user, nil
+}
+
+func (u *UserRepo) UpdateUser(user *entity.User) error {
+	return u.PG.Conn.Save(user).Error
+}
+
+func (u *UserRepo) DeleteUser(id string) error {
+	return u.PG.Conn.Where("id = ?", id).Delete(&entity.User{}).Error
+}

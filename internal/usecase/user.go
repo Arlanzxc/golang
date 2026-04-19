@@ -64,3 +64,34 @@ func (u *UserUseCase) GetUserByID(id string) (*entity.User, error) {
 func (u *UserUseCase) PromoteUser(id string) error {
 	return u.repo.PromoteUser(id)
 }
+
+func (u *UserUseCase) RegisterUserWithEmailCheck(user *entity.User, email string) error {
+	existing, err := u.repo.GetByEmail(email)
+	if existing != nil {
+		return fmt.Errorf("user with this email already exists")
+	}
+	if err != nil && err.Error() != "user not found" {
+		return fmt.Errorf("error getting user with this email")
+	}
+	_, err = u.repo.RegisterUser(user)
+	return err
+}
+
+func (u *UserUseCase) UpdateUserName(id string, newName string) error {
+	if newName == "" {
+		return fmt.Errorf("name cannot be empty")
+	}
+	user, err := u.repo.GetUserByID(id)
+	if err != nil {
+		return err
+	}
+	user.Username = newName 
+	return u.repo.UpdateUser(user)
+}
+
+func (u *UserUseCase) DeleteUser(id string) error {
+	if id == "1" { 
+		return fmt.Errorf("it is not allowed to delete admin user")
+	}
+	return u.repo.DeleteUser(id)
+}
